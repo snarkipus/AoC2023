@@ -1,11 +1,9 @@
 use color_eyre::eyre::Result;
 use std::collections::HashMap;
-use std::error::Error;
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
 use std::str::FromStr;
-use tracing::debug;
 use tracing::info;
 use tracing_subscriber::{filter::targets::Targets, layer::SubscriberExt, util::SubscriberInitExt};
 
