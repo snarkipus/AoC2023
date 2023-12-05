@@ -564,17 +564,11 @@ mod tests {
     fn test_is_feasible() {
         let input = read_input("../test-1.txt").unwrap();
         let data = parse_data(input).unwrap();
-        assert!(is_feasible(&data[0]).0);
-        assert!(is_feasible(&data[1]).0);
-        assert!(!is_feasible(&data[2]).0);
-        assert!(!is_feasible(&data[3]).0);
-        assert!(is_feasible(&data[4]).0);
-
-        assert_eq!(is_feasible(&data[0]).1, 48);
-        assert_eq!(is_feasible(&data[1]).1, 12);
-        assert_eq!(is_feasible(&data[2]).1, 1560);
-        assert_eq!(is_feasible(&data[3]).1, 630);
-        assert_eq!(is_feasible(&data[4]).1, 36);
+        assert!(is_feasible(&data[0]));
+        assert!(is_feasible(&data[1]));
+        assert!(!is_feasible(&data[2]));
+        assert!(!is_feasible(&data[3]));
+        assert!(is_feasible(&data[4]));
     }
 
     #[test]
@@ -582,7 +576,7 @@ mod tests {
         let input = read_input("../test-1.txt").unwrap();
         let data = parse_data(input).unwrap();
         let total = data.iter().fold(0, |acc, game| {
-            if is_feasible(game).0 {
+            if is_feasible(game) {
                 acc + game.id
             } else {
                 acc
