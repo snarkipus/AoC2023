@@ -51,7 +51,6 @@ fn main() {
     // 3) Process data
     let total = data.iter().fold(0, |acc, game| {
         if is_feasible(game) {
-            info!("Game {} is feasible", game.id);
             acc + game.id
         } else {
             acc
@@ -60,6 +59,15 @@ fn main() {
 
     // 4) Print result
     println!("Total: {}", total);
+
+    // 5) Determine power
+    let total_power = data.iter().fold(0, |acc, game| {
+        let power = get_power(game);
+        acc + power
+    });
+
+    // 6) Print result
+    println!("Total Power: {}", total_power);
 
     info!("Winding Down...");
 }
@@ -118,16 +126,49 @@ fn is_feasible(game: &Game) -> bool {
         let mut green = 0;
         let mut red = 0;
 
-        round.0.iter().for_each(|color_count| {
-            match color_count.color {
+        round
+            .0
+            .iter()
+            .for_each(|color_count| match color_count.color {
                 Color::Blue => blue += color_count.count,
                 Color::Green => green += color_count.count,
                 Color::Red => red += color_count.count,
-            }
-        });
+            });
 
         blue <= 14 && green <= 13 && red <= 12
     })
+}
+
+fn get_power(game: &Game) -> usize {
+    let mut blue_max = 0;
+    let mut green_max = 0;
+    let mut red_max = 0;
+
+    game.rounds.iter().for_each(|round| {
+        let mut blue = 0;
+        let mut green = 0;
+        let mut red = 0;
+
+        round
+            .0
+            .iter()
+            .for_each(|color_count| match color_count.color {
+                Color::Blue => {
+                    blue += color_count.count;
+                    blue_max = blue_max.max(blue);
+                }
+                Color::Green => {
+                    green += color_count.count;
+                    green_max = green_max.max(green);
+                }
+                Color::Red => {
+                    red += color_count.count;
+                    red_max = red_max.max(red);
+                }
+            });
+    });
+
+    blue_max * green_max * red_max
 }
 
 // parse a vector of games
@@ -223,11 +264,11 @@ mod tests {
         let round = Round(vec![
             ColorCount {
                 color: Color::Blue,
-                count: 3
+                count: 3,
             },
             ColorCount {
                 color: Color::Red,
-                count: 4
+                count: 4,
             },
         ]);
         assert_eq!(parse_round("3 blue, 4 red"), Ok(("", round)));
@@ -241,17 +282,33 @@ mod tests {
             id: 1,
             rounds: vec![
                 Round(vec![
-                    ColorCount { color: Color::Blue, count: 3 },
-                    ColorCount { color: Color::Red, count: 4 },
+                    ColorCount {
+                        color: Color::Blue,
+                        count: 3,
+                    },
+                    ColorCount {
+                        color: Color::Red,
+                        count: 4,
+                    },
                 ]),
                 Round(vec![
-                    ColorCount { color: Color::Red, count: 1 },
-                    ColorCount { color: Color::Green, count: 2 },
-                    ColorCount { color: Color::Blue, count: 6 },
+                    ColorCount {
+                        color: Color::Red,
+                        count: 1,
+                    },
+                    ColorCount {
+                        color: Color::Green,
+                        count: 2,
+                    },
+                    ColorCount {
+                        color: Color::Blue,
+                        count: 6,
+                    },
                 ]),
-                Round(vec![
-                    ColorCount { color: Color::Green, count: 2 },
-                ]),
+                Round(vec![ColorCount {
+                    color: Color::Green,
+                    count: 2,
+                }]),
             ],
         };
         assert_eq!(parse_game(game_str), Ok(("", expected_game)));
@@ -261,17 +318,38 @@ mod tests {
             id: 2,
             rounds: vec![
                 Round(vec![
-                    ColorCount { color: Color::Blue, count: 1 },
-                    ColorCount { color: Color::Green, count: 2 },
+                    ColorCount {
+                        color: Color::Blue,
+                        count: 1,
+                    },
+                    ColorCount {
+                        color: Color::Green,
+                        count: 2,
+                    },
                 ]),
                 Round(vec![
-                    ColorCount { color: Color::Green, count: 3 },
-                    ColorCount { color: Color::Blue, count: 4 },
-                    ColorCount { color: Color::Red, count: 1 },
+                    ColorCount {
+                        color: Color::Green,
+                        count: 3,
+                    },
+                    ColorCount {
+                        color: Color::Blue,
+                        count: 4,
+                    },
+                    ColorCount {
+                        color: Color::Red,
+                        count: 1,
+                    },
                 ]),
                 Round(vec![
-                    ColorCount { color: Color::Green, count: 1 },
-                    ColorCount { color: Color::Blue, count: 1 },
+                    ColorCount {
+                        color: Color::Green,
+                        count: 1,
+                    },
+                    ColorCount {
+                        color: Color::Blue,
+                        count: 1,
+                    },
                 ]),
             ],
         };
@@ -312,12 +390,10 @@ mod tests {
                             count: 6,
                         },
                     ]),
-                    Round(vec![
-                        ColorCount {
-                            color: Color::Green,
-                            count: 2,
-                        },
-                    ]),
+                    Round(vec![ColorCount {
+                        color: Color::Green,
+                        count: 2,
+                    }]),
                 ],
             },
             Game {
@@ -488,11 +564,17 @@ mod tests {
     fn test_is_feasible() {
         let input = read_input("../test-1.txt").unwrap();
         let data = parse_data(input).unwrap();
-        assert!(is_feasible(&data[0]));
-        assert!(is_feasible(&data[1]));
-        assert!(!is_feasible(&data[2]));
-        assert!(!is_feasible(&data[3]));
-        assert!(is_feasible(&data[4]));
+        assert!(is_feasible(&data[0]).0);
+        assert!(is_feasible(&data[1]).0);
+        assert!(!is_feasible(&data[2]).0);
+        assert!(!is_feasible(&data[3]).0);
+        assert!(is_feasible(&data[4]).0);
+
+        assert_eq!(is_feasible(&data[0]).1, 48);
+        assert_eq!(is_feasible(&data[1]).1, 12);
+        assert_eq!(is_feasible(&data[2]).1, 1560);
+        assert_eq!(is_feasible(&data[3]).1, 630);
+        assert_eq!(is_feasible(&data[4]).1, 36);
     }
 
     #[test]
@@ -500,7 +582,7 @@ mod tests {
         let input = read_input("../test-1.txt").unwrap();
         let data = parse_data(input).unwrap();
         let total = data.iter().fold(0, |acc, game| {
-            if is_feasible(game) {
+            if is_feasible(game).0 {
                 acc + game.id
             } else {
                 acc
