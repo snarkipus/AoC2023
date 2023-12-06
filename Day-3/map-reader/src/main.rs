@@ -34,24 +34,60 @@ impl Number {
         self.0.iter().enumerate().for_each(|(i, numeral)| {
             // first numeral: 5 neighbors
             if i == 0 {
-                border.insert(Position { row: numeral.position.row - 1, col: numeral.position.col }); // above
-                border.insert(Position { row: numeral.position.row + 1, col: numeral.position.col }); // below
-                border.insert(Position { row: numeral.position.row - 1, col: numeral.position.col - 1 }); // diagonally up
-                border.insert(Position { row: numeral.position.row + 1, col: numeral.position.col - 1 }); // diagonally down
-                border.insert(Position { row: numeral.position.row, col: numeral.position.col - 1 }); // to the left
-            } 
+                border.insert(Position {
+                    row: numeral.position.row - 1,
+                    col: numeral.position.col,
+                }); // above
+                border.insert(Position {
+                    row: numeral.position.row + 1,
+                    col: numeral.position.col,
+                }); // below
+                border.insert(Position {
+                    row: numeral.position.row - 1,
+                    col: numeral.position.col - 1,
+                }); // diagonally up
+                border.insert(Position {
+                    row: numeral.position.row + 1,
+                    col: numeral.position.col - 1,
+                }); // diagonally down
+                border.insert(Position {
+                    row: numeral.position.row,
+                    col: numeral.position.col - 1,
+                }); // to the left
+            }
             // last numeral: 5 neighbors
             else if i == self.0.len() - 1 {
-                border.insert(Position { row: numeral.position.row - 1, col: numeral.position.col }); // above
-                border.insert(Position { row: numeral.position.row + 1, col: numeral.position.col }); // below
-                border.insert(Position { row: numeral.position.row - 1, col: numeral.position.col + 1 }); // diagonally up and right
-                border.insert(Position { row: numeral.position.row + 1, col: numeral.position.col + 1 }); // diagonally down and right
-                border.insert(Position { row: numeral.position.row, col: numeral.position.col + 1 }); // to the right
+                border.insert(Position {
+                    row: numeral.position.row - 1,
+                    col: numeral.position.col,
+                }); // above
+                border.insert(Position {
+                    row: numeral.position.row + 1,
+                    col: numeral.position.col,
+                }); // below
+                border.insert(Position {
+                    row: numeral.position.row - 1,
+                    col: numeral.position.col + 1,
+                }); // diagonally up and right
+                border.insert(Position {
+                    row: numeral.position.row + 1,
+                    col: numeral.position.col + 1,
+                }); // diagonally down and right
+                border.insert(Position {
+                    row: numeral.position.row,
+                    col: numeral.position.col + 1,
+                }); // to the right
             }
             // middle numeral: 2 neighbors
             else {
-                border.insert(Position { row: numeral.position.row - 1, col: numeral.position.col });
-                border.insert(Position { row: numeral.position.row + 1, col: numeral.position.col });
+                border.insert(Position {
+                    row: numeral.position.row - 1,
+                    col: numeral.position.col,
+                });
+                border.insert(Position {
+                    row: numeral.position.row + 1,
+                    col: numeral.position.col,
+                });
             }
         });
         border
@@ -74,16 +110,27 @@ fn main() {
     info!("Starting up...");
 
     // 1) Read input file
-    let input = read_input("../input.txt").unwrap();
+    let input = read_input("../test-1.txt").unwrap();
 
     // 2) Parse input file
-    let data = parse_symbols(input).unwrap();
+    let symbols = parse_symbols(&input).unwrap();
+    let numbers = parse_numbers(&input).unwrap();
 
     // 3) Process data
+    let mut valid_numbers = Vec::new();
+    let symbols_set: HashSet<_> = symbols.iter().collect();
 
-
+    numbers.iter().for_each(|number| {
+        let border = number.border();
+        if border
+            .iter()
+            .any(|position| symbols_set.contains(&position))
+        {
+            valid_numbers.push(number.value());
+        }
+    });
+    dbg!(valid_numbers.iter().sum::<u32>());
     // 4) Print result
-
 
     info!("Winding Down...");
 }
@@ -102,33 +149,34 @@ fn read_input(filename: &str) -> Result<Vec<String>> {
 }
 
 #[tracing::instrument]
-fn parse_symbols(input: Vec<String>) -> Result<Vec<Position>> {
+fn parse_symbols(input: &Vec<String>) -> Result<Vec<Position>> {
     let mut symbols = Vec::<Position>::new();
-    
+
     input.iter().enumerate().for_each(|(row, line)| {
-        line.chars().enumerate().for_each(|(col, ch)| {
-            match ch {
-                '*' => symbols.push(Position { row, col }),
-                '$' => symbols.push(Position { row, col }),
-                '+' => symbols.push(Position { row, col }),
-                '#' => symbols.push(Position { row, col }),
-                _ => (),
-            }
+        line.chars().enumerate().for_each(|(col, ch)| match ch {
+            '*' => symbols.push(Position { row, col }),
+            '$' => symbols.push(Position { row, col}),
+            '+' => symbols.push(Position { row, col }),
+            '#' => symbols.push(Position { row, col }),
+            _ => (),
         })
     });
-    
+
     Ok(symbols)
 }
 
 #[tracing::instrument]
-fn parse_numbers(input: Vec<String>) -> Result<Vec<Number>> {
+fn parse_numbers(input: &Vec<String>) -> Result<Vec<Number>> {
     let mut numbers = Vec::<Number>::new();
     let mut current_number = Vec::<Numeral>::new();
 
     input.iter().enumerate().for_each(|(row, line)| {
         line.chars().enumerate().for_each(|(col, ch)| {
             if let Some(digit) = ch.to_digit(10) {
-                let numeral = Numeral { position: Position { row, col }, value: digit };
+                let numeral = Numeral {
+                    position: Position { row, col },
+                    value: digit,
+                };
                 current_number.push(numeral);
             } else if !current_number.is_empty() {
                 numbers.push(Number(current_number.clone()));
@@ -181,7 +229,7 @@ mod tests {
     #[test]
     fn test_parse_symbols() {
         let input = read_input("../test-1.txt").unwrap();
-        let symbols = parse_symbols(input).unwrap();
+        let symbols = parse_symbols(&input).unwrap();
         assert_eq!(symbols.len(), 6);
         assert_eq!(symbols[0].row, 1);
         assert_eq!(symbols[0].col, 3);
@@ -194,11 +242,26 @@ mod tests {
     #[test]
     fn test_border() {
         let number = Number(vec![
-            Numeral { position: Position { row: 2, col: 3 }, value: 4 },
-            Numeral { position: Position { row: 2, col: 4 }, value: 6 },
-            Numeral { position: Position { row: 2, col: 5 }, value: 7 },
-            Numeral { position: Position { row: 2, col: 6 }, value: 8 },
-            Numeral { position: Position { row: 2, col: 7 }, value: 9 },
+            Numeral {
+                position: Position { row: 2, col: 3 },
+                value: 4,
+            },
+            Numeral {
+                position: Position { row: 2, col: 4 },
+                value: 6,
+            },
+            Numeral {
+                position: Position { row: 2, col: 5 },
+                value: 7,
+            },
+            Numeral {
+                position: Position { row: 2, col: 6 },
+                value: 8,
+            },
+            Numeral {
+                position: Position { row: 2, col: 7 },
+                value: 9,
+            },
         ]);
         let border = number.border();
         assert_eq!(border.len(), 16);
@@ -207,11 +270,26 @@ mod tests {
     #[test]
     fn test_value() {
         let number = Number(vec![
-            Numeral { position: Position { row: 2, col: 3 }, value: 4 },
-            Numeral { position: Position { row: 2, col: 4 }, value: 6 },
-            Numeral { position: Position { row: 2, col: 5 }, value: 7 },
-            Numeral { position: Position { row: 2, col: 6 }, value: 8 },
-            Numeral { position: Position { row: 2, col: 7 }, value: 9 },
+            Numeral {
+                position: Position { row: 2, col: 3 },
+                value: 4,
+            },
+            Numeral {
+                position: Position { row: 2, col: 4 },
+                value: 6,
+            },
+            Numeral {
+                position: Position { row: 2, col: 5 },
+                value: 7,
+            },
+            Numeral {
+                position: Position { row: 2, col: 6 },
+                value: 8,
+            },
+            Numeral {
+                position: Position { row: 2, col: 7 },
+                value: 9,
+            },
         ]);
         assert_eq!(number.value(), 46789);
     }
@@ -219,8 +297,8 @@ mod tests {
     #[test]
     fn test_parse_numbers() {
         let input = read_input("../test-1.txt").unwrap();
-        let result = parse_numbers(input).unwrap();
-        
+        let result = parse_numbers(&input).unwrap();
+
         assert_eq!(result.len(), 10); // Check if the number of numbers parsed is correct
 
         // Check the first number
@@ -244,6 +322,5 @@ mod tests {
         assert_eq!(result[7].value(), 755);
         assert_eq!(result[8].value(), 664);
         assert_eq!(result[9].value(), 598);
-
     }
-} 
+}
